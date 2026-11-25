@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Footer Photo Placeholder">
+  <defs>
+    <linearGradient id="footerBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e9e4db" />
+      <stop offset="100%" stop-color="#d2cbbd" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#footerBg)" />
+  <rect x="36" y="36" width="1128" height="728" rx="14" fill="none" stroke="#b6ad9d" stroke-width="2" />
+  <text x="600" y="395" text-anchor="middle" font-family="Georgia, serif" font-size="38" fill="#5e5548">Thank You Sample Image</text>
+  <text x="600" y="442" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#7c7263">Footer Placeholder (1200 × 800)</text>
+</svg>

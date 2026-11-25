@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Couple Photo Placeholder">
+  <defs>
+    <linearGradient id="coupleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7f2ea" />
+      <stop offset="100%" stop-color="#e5dac8" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#coupleBg)" />
+  <rect x="36" y="36" width="1128" height="728" rx="14" fill="none" stroke="#c9b9a4" stroke-width="2" />
+  <circle cx="555" cy="340" r="56" fill="#f9f6f0" stroke="#c2b09a" stroke-width="2" />
+  <circle cx="645" cy="340" r="56" fill="#f9f6f0" stroke="#c2b09a" stroke-width="2" />
+  <text x="600" y="455" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#6d5c4c">Couple Sample Photo</text>
+  <text x="600" y="498" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#8f7e6c">Replace via Admin Media or /images/</text>
+</svg>
