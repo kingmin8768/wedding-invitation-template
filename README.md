@@ -8,13 +8,15 @@
 
 프론트엔드(React) + 백엔드(NestJS + SQLite + WebSocket)가 **단일 Docker 이미지(`Dockerfile`)** 로 통합되어 있어, 별도 서버 설정 없이 바로 배포할 수 있습니다.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kingmin8768/wedding-invitation-template)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/github?repo=https://github.com/kingmin8768/wedding-invitation-template)
+
 ### 1) Render (무료 플랜 가능 · `render.yaml` 내장)
-1. 이 저장소를 본인 GitHub로 **Fork** 합니다.
-2. [Render Blueprint](https://render.com/deploy)에서 본인 Fork 저장소를 연결하면 [`render.yaml`](render.yaml)을 읽어 자동 빌드/배포됩니다.
-3. 배포 시 `ADMIN_PASSWORD`만 원하는 비밀번호로 입력하세요. (`JWT_*` 시크릿은 자동 생성됩니다.)
+1. 위 **Deploy to Render** 버튼을 누르거나, 이 저장소를 Fork한 뒤 [Render Blueprint](https://render.com/deploy?repo=https://github.com/kingmin8768/wedding-invitation-template)에서 연결하면 [`render.yaml`](render.yaml)을 읽어 자동 빌드/배포됩니다.
+2. 배포 시 `ADMIN_PASSWORD`만 원하는 비밀번호로 입력하세요. (`JWT_*` 시크릿은 자동 생성됩니다.)
 
 ### 2) Railway (`railway.json` 내장)
-1. Fork한 저장소를 [Railway](https://railway.app/new)에서 **Deploy from GitHub repo**로 선택합니다.
+1. 위 **Deploy on Railway** 버튼을 누르거나, Fork한 저장소를 [Railway](https://railway.com/new/github?repo=https://github.com/kingmin8768/wedding-invitation-template)에서 선택합니다.
 2. 루트 [`railway.json`](railway.json)과 [`Dockerfile`](Dockerfile)을 자동 인식하여 헬스체크(`/api/health`)까지 즉시 배포됩니다.
 3. 데이터 영속화가 필요하면 `/app/data` 경로에 Railway Volume을 연결하세요.
 
