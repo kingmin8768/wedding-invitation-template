@@ -1,8 +1,9 @@
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const FamilyInfo = () => {
-  const { groom, bride } = INVITATION_CONFIG.parents;
-  const { couple } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { groom, bride } = config.parents;
+  const { couple } = config;
 
   return (
     <div className="family" data-aos="fade-up">

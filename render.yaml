@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: wedding-invitation
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_DRIVER
+        value: better-sqlite3
+      - key: DB_PATH
+        value: /app/data/db/wedding.db
+      - key: UPLOAD_ROOT
+        value: /app/data/uploads
+      - key: FRONTEND_DIST_DIR
+        value: /app/public
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@example.com
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: VITE_NAVER_MAPS_KEY_ID
+        sync: false
+    # 유료 플랜에서 영구 디스크를 연결하려면 아래 주석을 해제하세요.
+    # disk:
+    #   name: wedding-data
+    #   mountPath: /app/data
+    #   sizeGB: 1

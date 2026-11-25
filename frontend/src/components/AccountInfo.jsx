@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const AccountInfo = ({ showToast }) => {
+  const { config } = useInvitationConfig();
   const [groomOpen, setGroomOpen] = useState(false);
   const [brideOpen, setBrideOpen] = useState(false);
 
@@ -20,8 +21,8 @@ const AccountInfo = ({ showToast }) => {
     });
   };
 
-  const groomAccounts = INVITATION_CONFIG.accounts.groom;
-  const brideAccounts = INVITATION_CONFIG.accounts.bride;
+  const groomAccounts = config.accounts.groom;
+  const brideAccounts = config.accounts.bride;
 
   const ChevronDown = () => (
     <svg width="14" height="8" viewBox="0 0 14 8" fill="none">

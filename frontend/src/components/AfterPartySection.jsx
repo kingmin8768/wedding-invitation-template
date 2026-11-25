@@ -1,7 +1,8 @@
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const AfterPartySection = () => {
-  const { afterParty } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { afterParty } = config;
 
   if (!afterParty.enabled) {
     return null;

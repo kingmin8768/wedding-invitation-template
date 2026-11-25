@@ -1,7 +1,8 @@
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const Calendar = () => {
-  const { wedding, venue } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { wedding, venue } = config;
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const firstDayOfWeek = new Date(wedding.year, wedding.month - 1, 1).getDay();
   const daysInMonth = new Date(wedding.year, wedding.month, 0).getDate();

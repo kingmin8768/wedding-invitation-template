@@ -1,20 +1,30 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+
+type RuntimeSecrets = {
+  accessTokenSecret: string;
+  refreshTokenSecret: string;
+};
 
 @Injectable()
 export class ConfigService {
+  private cachedRuntimeSecrets: RuntimeSecrets | null = null;
+
   get isProduction() {
     return process.env.NODE_ENV === 'production';
   }
 
+  get hasExplicitCorsOrigins() {
+    return this.getConfiguredCorsOrigins().length > 0;
+  }
+
   get corsAllowedOrigins() {
-    const configuredOrigins = [
-      ...this.readCsvEnv('CORS_ALLOWED_ORIGINS'),
-      process.env.APP_ORIGIN?.trim(),
-      process.env.FRONTEND_ORIGIN?.trim(),
-    ].filter((origin): origin is string => Boolean(origin));
+    const configuredOrigins = this.getConfiguredCorsOrigins();
 
     if (configuredOrigins.length > 0) {
-      return [...new Set(configuredOrigins)];
+      return configuredOrigins;
     }
 
     if (!this.isProduction) {
@@ -28,17 +38,33 @@ export class ConfigService {
       ];
     }
 
-    throw new Error(
-      'CORS_ALLOWED_ORIGINS or APP_ORIGIN environment variable is required in production.',
-    );
+    return [];
   }
 
   get accessTokenSecret() {
-    return this.readRequiredEnv('JWT_ACCESS_SECRET', 'wedding-access-secret');
+    const configured = process.env.JWT_ACCESS_SECRET?.trim();
+    if (configured) {
+      return configured;
+    }
+
+    if (!this.isProduction) {
+      return 'wedding-access-secret';
+    }
+
+    return this.loadOrCreateRuntimeSecrets().accessTokenSecret;
   }
 
   get refreshTokenSecret() {
-    return this.readRequiredEnv('JWT_REFRESH_SECRET', 'wedding-refresh-secret');
+    const configured = process.env.JWT_REFRESH_SECRET?.trim();
+    if (configured) {
+      return configured;
+    }
+
+    if (!this.isProduction) {
+      return 'wedding-refresh-secret';
+    }
+
+    return this.loadOrCreateRuntimeSecrets().refreshTokenSecret;
   }
 
   get accessTokenExpiresIn() {
@@ -50,11 +76,35 @@ export class ConfigService {
   }
 
   get adminEmail() {
-    return this.readRequiredEnv('ADMIN_EMAIL', 'admin@wedding.local');
+    return (
+      process.env.ADMIN_EMAIL?.trim() ||
+      (this.isProduction ? 'admin@example.com' : 'admin@wedding.local')
+    );
   }
 
   get adminPassword() {
-    return this.readRequiredEnv('ADMIN_PASSWORD', 'admin1234');
+    return process.env.ADMIN_PASSWORD?.trim() || 'admin1234';
+  }
+
+  get isUsingDefaultAdminPassword() {
+    return !process.env.ADMIN_PASSWORD?.trim();
+  }
+
+  get allowIframeEmbed() {
+    return (
+      process.env.ALLOW_IFRAME_EMBED === 'true' ||
+      Boolean(process.env.SPACE_ID?.trim())
+    );
+  }
+
+  get frontendDistDir(): string | null {
+    const configured = process.env.FRONTEND_DIST_DIR?.trim();
+    if (!configured) {
+      return null;
+    }
+
+    const resolved = resolve(configured);
+    return existsSync(join(resolved, 'index.html')) ? resolved : null;
   }
 
   get accessTokenCookieMaxAge() {
@@ -77,17 +127,60 @@ export class ConfigService {
     return this.corsAllowedOrigins.includes(origin);
   }
 
-  private readRequiredEnv(name: string, fallback: string) {
-    const value = process.env[name]?.trim();
-    if (value) {
-      return value;
+  private getConfiguredCorsOrigins() {
+    const configuredOrigins = [
+      ...this.readCsvEnv('CORS_ALLOWED_ORIGINS'),
+      process.env.APP_ORIGIN?.trim(),
+      process.env.FRONTEND_ORIGIN?.trim(),
+    ].filter((origin): origin is string => Boolean(origin));
+
+    return [...new Set(configuredOrigins)];
+  }
+
+  private loadOrCreateRuntimeSecrets(): RuntimeSecrets {
+    if (this.cachedRuntimeSecrets) {
+      return this.cachedRuntimeSecrets;
     }
 
-    if (!this.isProduction) {
-      return fallback;
+    const dbPath = process.env.DB_PATH?.trim() || 'wedding.db';
+    const secretsDir =
+      dbPath === ':memory:' ? process.cwd() : dirname(resolve(dbPath));
+    const secretsFile = join(secretsDir, '.runtime-secrets.json');
+
+    try {
+      if (existsSync(secretsFile)) {
+        const parsed = JSON.parse(
+          readFileSync(secretsFile, 'utf-8'),
+        ) as Partial<RuntimeSecrets>;
+        if (parsed.accessTokenSecret && parsed.refreshTokenSecret) {
+          this.cachedRuntimeSecrets = {
+            accessTokenSecret: parsed.accessTokenSecret,
+            refreshTokenSecret: parsed.refreshTokenSecret,
+          };
+          return this.cachedRuntimeSecrets;
+        }
+      }
+    } catch {
+      // Regenerate below if the persisted runtime secrets file is unreadable.
     }
 
-    throw new Error(`${name} environment variable is required in production.`);
+    const generated: RuntimeSecrets = {
+      accessTokenSecret: randomBytes(32).toString('hex'),
+      refreshTokenSecret: randomBytes(32).toString('hex'),
+    };
+
+    try {
+      mkdirSync(secretsDir, { recursive: true });
+      writeFileSync(secretsFile, JSON.stringify(generated), {
+        encoding: 'utf-8',
+        mode: 0o600,
+      });
+    } catch {
+      // Keep secrets in memory if the filesystem is read-only.
+    }
+
+    this.cachedRuntimeSecrets = generated;
+    return generated;
   }
 
   private readCsvEnv(name: string) {

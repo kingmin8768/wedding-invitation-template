@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const RsvpModal = ({ isOpen, onClose, onDismissToday }) => {
-  const { couple, wedding, venue } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { couple, wedding, venue } = config;
   const infoRows = [
     {
       icon: '♡',

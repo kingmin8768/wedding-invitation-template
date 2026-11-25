@@ -4,6 +4,7 @@ import AdminLogsPanel from '../components/admin/AdminLogsPanel';
 import AdminOverviewPanel from '../components/admin/AdminOverviewPanel';
 import AssetAdminPanel from '../components/admin/AssetAdminPanel';
 import InvitationMediaAdminPanel from '../components/admin/InvitationMediaAdminPanel';
+import InvitationSettingsAdminPanel from '../components/admin/InvitationSettingsAdminPanel';
 import GuestbookAdminPanel from '../components/admin/GuestbookAdminPanel';
 import RsvpAdminPanel from '../components/admin/RsvpAdminPanel';
 import SharedPhotoAdminPanel from '../components/admin/SharedPhotoAdminPanel';
@@ -18,6 +19,11 @@ const sections = [
     slug: 'overview',
     label: '대시보드',
     summary: '운영 현황과 승인 대기 항목을 모아보는 공간입니다.',
+  },
+  {
+    slug: 'settings',
+    label: '청첩장 내용 설정',
+    summary: '신랑·신부, 예식 일시·장소, 계좌번호, 교통 안내를 코드 수정 없이 바로 편집합니다.',
   },
   {
     slug: 'logs',
@@ -182,6 +188,10 @@ const AdminPage = () => {
           )}
 
           {activeSection === 'overview' && <AdminOverviewPanel overview={overview} />}
+
+          {activeSection === 'settings' && tokens?.accessToken && (
+            <InvitationSettingsAdminPanel accessToken={tokens.accessToken} />
+          )}
 
           {activeSection === 'events' && <LazygyuAdminPanel hostLink="/host/lazygyu" />}
 

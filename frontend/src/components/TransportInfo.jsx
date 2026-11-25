@@ -1,7 +1,8 @@
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const TransportInfo = () => {
-  const { transport } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { transport } = config;
 
   return (
     <div className="transport" data-aos="fade-up">

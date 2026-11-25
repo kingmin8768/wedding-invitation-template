@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const TogetherCounter = () => {
-  const { wedding, couple } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { wedding, couple } = config;
   const [dayInfo, setDayInfo] = useState({ days: 0, isPast: false });
 
   useEffect(() => {

@@ -15,9 +15,9 @@ export class AuthBootstrap implements OnApplicationBootstrap {
     this.configService.validateRequiredConfiguration();
     await this.authService.bootstrapAdmin();
 
-    if (process.env.NODE_ENV !== 'production') {
-      this.logger.log(
-        `Dev admin ready: ${this.configService.adminEmail} / ${this.configService.adminPassword}`,
+    if (this.configService.isUsingDefaultAdminPassword) {
+      this.logger.warn(
+        `Default admin credentials active (${this.configService.adminEmail} / ${this.configService.adminPassword}). Set ADMIN_PASSWORD in production.`,
       );
     }
   }

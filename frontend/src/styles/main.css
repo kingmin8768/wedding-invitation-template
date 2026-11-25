@@ -3468,3 +3468,81 @@ body {
   text-align: center;
   padding: 18px;
 }
+
+.admin-shell__success {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(76, 175, 80, 0.14);
+  color: #2e7d32;
+  font-size: 0.86rem;
+}
+
+.admin-upload-form h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  color: var(--color-text);
+}
+
+.admin-upload-form textarea {
+  padding: 10px 12px;
+  border: 1px solid rgba(110, 133, 183, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  resize: vertical;
+}
+
+.admin-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.admin-settings-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+  cursor: pointer;
+}
+
+.admin-settings-checkbox input[type="checkbox"] {
+  min-height: auto;
+  width: 16px;
+  height: 16px;
+}
+
+.admin-settings-account-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .admin-settings-account-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-settings-danger-btn {
+  background: #fff !important;
+  color: #b55b5b !important;
+  border-color: rgba(181, 91, 91, 0.3) !important;
+}
+
+.admin-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-settings-secondary-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(110, 133, 183, 0.3);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+}

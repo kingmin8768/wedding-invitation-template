@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const FloatingButtons = ({ onScrollTopClick, onShareResult, showToast }) => {
+  const { config } = useInvitationConfig();
+
   const scrollToTop = () => {
     onScrollTopClick?.();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -9,8 +11,8 @@ const FloatingButtons = ({ onScrollTopClick, onShareResult, showToast }) => {
 
   const handleShare = async () => {
     const shareData = {
-      title: INVITATION_CONFIG.share.title,
-      text: INVITATION_CONFIG.share.text,
+      title: config.share.title,
+      text: config.share.text,
       url: window.location.href,
     };
 

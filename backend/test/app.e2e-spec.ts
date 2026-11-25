@@ -8,6 +8,7 @@ import { join } from 'path';
 import { AppModule } from './../src/app.module';
 import { configureApp } from './../src/app.setup';
 import { Asset } from '../src/assets/asset.entity';
+import { ConfigService } from '../src/auth/services/config.service';
 import { GameEntry } from '../src/games/game-entry.entity';
 import { Guestbook } from '../src/guestbook/guestbook.entity';
 
@@ -849,12 +850,18 @@ describe('Auth and admin flow (e2e)', () => {
     ).toBeGreaterThanOrEqual(2);
   });
 
-  it('fails fast in production when auth secrets are missing', async () => {
+  it('auto-generates and persists auth secrets in production when env vars are missing', async () => {
     const previousNodeEnv = process.env.NODE_ENV;
     const previousAccessSecret = process.env.JWT_ACCESS_SECRET;
     const previousRefreshSecret = process.env.JWT_REFRESH_SECRET;
+    const runtimeSecretsPath = join(
+      process.cwd(),
+      'test',
+      '.runtime-secrets.json',
+    );
 
     try {
+      rmSync(runtimeSecretsPath, { force: true });
       process.env.NODE_ENV = 'production';
       delete process.env.JWT_ACCESS_SECRET;
       delete process.env.JWT_REFRESH_SECRET;
@@ -864,13 +871,16 @@ describe('Auth and admin flow (e2e)', () => {
       }).compile();
 
       const prodApp = moduleFixture.createNestApplication();
+      await configureApp(prodApp);
 
-      await expect(configureApp(prodApp)).rejects.toThrow(
-        'JWT_ACCESS_SECRET environment variable is required in production.',
-      );
+      const configService = prodApp.get(ConfigService);
+      expect(configService.accessTokenSecret).toHaveLength(64);
+      expect(configService.refreshTokenSecret).toHaveLength(64);
+      expect(existsSync(runtimeSecretsPath)).toBe(true);
 
       await prodApp.close().catch(() => {});
     } finally {
+      rmSync(runtimeSecretsPath, { force: true });
       process.env.NODE_ENV = previousNodeEnv;
       process.env.JWT_ACCESS_SECRET = previousAccessSecret;
       process.env.JWT_REFRESH_SECRET = previousRefreshSecret;
@@ -1010,7 +1020,7 @@ describe('Auth and admin flow (e2e)', () => {
       "default-src 'self'",
     );
     expect(headersResponse.headers['content-security-policy']).toContain(
-      "script-src 'self' https://oapi.map.naver.com https://*.pstatic.net",
+      "script-src 'self' 'wasm-unsafe-eval' https://oapi.map.naver.com https://*.pstatic.net",
     );
     expect(headersResponse.headers['x-frame-options']).toBe('DENY');
     expect(headersResponse.headers['referrer-policy']).toBe(
@@ -1147,5 +1157,66 @@ describe('Auth and admin flow (e2e)', () => {
 
     expect(resetState.body.status).toBe('closed');
     expect(resetState.body.entries).toEqual([]);
+  });
+
+  it('serves health check and allows admins to customize and reset invitation settings', async () => {
+    const healthResponse = await request(app.getHttpServer())
+      .get('/api/health')
+      .expect(200);
+
+    expect(healthResponse.body.status).toBe('ok');
+
+    const initialPublic = await request(app.getHttpServer())
+      .get('/api/invitation-settings/public')
+      .expect(200);
+
+    expect(initialPublic.body.couple.groom.firstName).toBe('민수');
+
+    await request(app.getHttpServer())
+      .put('/api/invitation-settings/admin')
+      .send({ couple: { groom: { fullName: '박준호', firstName: '준호' } } })
+      .expect(401);
+
+    const adminAgent = request.agent(app.getHttpServer());
+    await adminAgent
+      .post('/api/auth/login')
+      .send({
+        email: process.env.ADMIN_EMAIL,
+        password: process.env.ADMIN_PASSWORD,
+      })
+      .expect(201);
+
+    const updatedResponse = await adminAgent
+      .put('/api/invitation-settings/admin')
+      .send({
+        couple: {
+          groom: { fullName: '박준호', firstName: '준호' },
+          bride: { fullName: '최서연', firstName: '서연' },
+        },
+        venue: {
+          name: '테스트 웨딩홀',
+          floor: '5층 루프탑홀',
+          address: '서울특별시 서초구 서초대로 100',
+          lat: 37.4923,
+          lng: 127.0292,
+        },
+      })
+      .expect(200);
+
+    expect(updatedResponse.body.couple.groom.firstName).toBe('준호');
+    expect(updatedResponse.body.venue.name).toBe('테스트 웨딩홀');
+
+    const publicAfterUpdate = await request(app.getHttpServer())
+      .get('/api/invitation-settings/public')
+      .expect(200);
+
+    expect(publicAfterUpdate.body.couple.bride.firstName).toBe('서연');
+    expect(publicAfterUpdate.body.venue.floor).toBe('5층 루프탑홀');
+
+    const resetResponse = await adminAgent
+      .post('/api/invitation-settings/admin/reset')
+      .expect(201);
+
+    expect(resetResponse.body.couple.groom.firstName).toBe('민수');
   });
 });

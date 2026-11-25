@@ -2,12 +2,14 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import { Observable, Subject, filter, interval, map, merge } from 'rxjs';
 import { Repository } from 'typeorm';
+import { ConfigService } from '../auth/services/config.service';
 import { GameEntry } from './game-entry.entity';
 import {
   GameEventState,
@@ -34,6 +36,8 @@ export class GamesService {
     private readonly gameEventStateRepository: Repository<GameEventState>,
     @InjectRepository(GameRound)
     private readonly gameRoundRepository: Repository<GameRound>,
+    @Optional()
+    private readonly configService?: ConfigService,
   ) {}
 
   observeEvents(): Observable<BroadcastEvent> {
@@ -50,7 +54,9 @@ export class GamesService {
           scope: 'lazygyu-host',
         },
         {
-          secret: process.env.JWT_ACCESS_SECRET,
+          secret:
+            this.configService?.accessTokenSecret ||
+            process.env.JWT_ACCESS_SECRET,
           expiresIn: '5m',
         },
       ),

@@ -111,16 +111,28 @@ export class AuthController {
 
   private buildCookieOptions(request: Request) {
     const requestOrigin = request.headers.origin?.trim();
-    const apiOrigin = `${request.protocol}://${request.get('host')}`;
+    const forwardedProto = String(request.headers['x-forwarded-proto'] || '')
+      .split(',')[0]
+      .trim()
+      .toLowerCase();
+    const isHttps = Boolean(
+      request.secure ||
+      forwardedProto === 'https' ||
+      process.env.COOKIE_SECURE === 'true' ||
+      requestOrigin?.startsWith('https://'),
+    );
+    const apiOrigin = `${isHttps ? 'https' : request.protocol}://${request.get('host')}`;
     const isCrossOriginRequest =
       this.configService.isProduction &&
       Boolean(requestOrigin) &&
       requestOrigin !== apiOrigin;
+    const useSameSiteNone =
+      isHttps && (isCrossOriginRequest || this.configService.allowIframeEmbed);
 
     return {
       httpOnly: true,
-      sameSite: (isCrossOriginRequest ? 'none' : 'lax') as 'none' | 'lax',
-      secure: this.configService.isProduction,
+      sameSite: (useSameSiteNone ? 'none' : 'lax') as 'none' | 'lax',
+      secure: isHttps,
       path: '/',
     };
   }

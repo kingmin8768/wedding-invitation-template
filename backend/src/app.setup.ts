@@ -1,5 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
+import { extname, join } from 'node:path';
 import { ConfigService } from './auth/services/config.service';
 
 type RateLimitRule = {
@@ -98,12 +100,14 @@ const RATE_LIMIT_RULES: RateLimitRule[] = [
 const isAdminRateLimitExemptPath = (path: string) =>
   /^\/api\/(?:.+\/)?admin(?:\/|$)/.test(path);
 
-const buildContentSecurityPolicy = () =>
+const buildContentSecurityPolicy = (allowIframeEmbed: boolean) =>
   [
     "default-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    allowIframeEmbed
+      ? "frame-ancestors 'self' https://huggingface.co https://*.hf.space"
+      : "frame-ancestors 'none'",
     "frame-src 'self' https://www.openstreetmap.org",
     "object-src 'none'",
     "img-src 'self' data: blob: https:",
@@ -113,17 +117,25 @@ const buildContentSecurityPolicy = () =>
     "connect-src 'self' https: ws: wss:",
   ].join('; ');
 
-const applySecurityHeaders = (response: Response, isProduction: boolean) => {
-  response.setHeader('Content-Security-Policy', buildContentSecurityPolicy());
+const applySecurityHeaders = (
+  response: Response,
+  configService: ConfigService,
+) => {
+  response.setHeader(
+    'Content-Security-Policy',
+    buildContentSecurityPolicy(configService.allowIframeEmbed),
+  );
   response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.setHeader(
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=()',
   );
-  response.setHeader('X-Frame-Options', 'DENY');
+  if (!configService.allowIframeEmbed) {
+    response.setHeader('X-Frame-Options', 'DENY');
+  }
   response.setHeader('X-Content-Type-Options', 'nosniff');
 
-  if (isProduction) {
+  if (configService.isProduction) {
     response.setHeader(
       'Strict-Transport-Security',
       'max-age=31536000; includeSubDomains',
@@ -186,17 +198,31 @@ export const configureApp = async (app: INestApplication) => {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
+  app.enableCors((request: Request, callback) => {
+    const origin = request.headers.origin?.trim();
+    if (!origin) {
+      callback(null, { origin: true, credentials: true });
+      return;
+    }
 
-      callback(null, configService.isCorsOriginAllowed(origin));
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
+    if (configService.hasExplicitCorsOrigins || !configService.isProduction) {
+      callback(null, {
+        origin: configService.isCorsOriginAllowed(origin),
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        credentials: true,
+      });
+      return;
+    }
+
+    const host = request.get('host');
+    const sameOriginAllowed =
+      Boolean(host) &&
+      (origin === `https://${host}` || origin === `http://${host}`);
+    callback(null, {
+      origin: sameOriginAllowed,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+    });
   });
 
   const expressApp = app.getHttpAdapter().getInstance();
@@ -204,8 +230,34 @@ export const configureApp = async (app: INestApplication) => {
   expressApp.disable?.('x-powered-by');
 
   app.use((request: Request, response: Response, next: NextFunction) => {
-    applySecurityHeaders(response, configService.isProduction);
+    applySecurityHeaders(response, configService);
     next();
   });
   app.use(createRateLimitMiddleware());
+
+  const frontendDistDir = configService.frontendDistDir;
+  if (frontendDistDir) {
+    expressApp.use(express.static(frontendDistDir));
+    expressApp.use(
+      (request: Request, response: Response, next: NextFunction) => {
+        const method = request.method.toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD') {
+          next();
+          return;
+        }
+
+        if (
+          request.path.startsWith('/api') ||
+          request.path.startsWith('/uploads') ||
+          request.path.startsWith('/socket.io') ||
+          extname(request.path)
+        ) {
+          next();
+          return;
+        }
+
+        response.sendFile(join(frontendDistDir, 'index.html'));
+      },
+    );
+  }
 };

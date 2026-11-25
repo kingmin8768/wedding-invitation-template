@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const NAVER_MAPS_KEY_ID =
   import.meta.env.VITE_NAVER_MAPS_KEY_ID?.trim() ||
@@ -51,7 +51,8 @@ const loadNaverMapsScript = () => {
 };
 
 const LocationMap = () => {
-  const { venue } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { venue } = config;
 
   const naverMapUrl = `https://map.naver.com/v5/search/${encodeURIComponent(`${venue.name} ${venue.address}`)}`;
   const kakaoNaviUrl = `https://map.kakao.com/link/to/${encodeURIComponent(venue.name)},${venue.lat},${venue.lng}`;

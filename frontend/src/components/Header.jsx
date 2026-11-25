@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { buildInvitationMenuItems } from '../lib/invitationMenu';
-import { INVITATION_CONFIG } from '../config/invitationConfig';
+import { useInvitationConfig } from '../hooks/useInvitationConfig';
 
 const Header = ({ bgmPlaying, onBgmToggle, showGuestbook }) => {
-  const { couple } = INVITATION_CONFIG;
+  const { config } = useInvitationConfig();
+  const { couple } = config;
   const [menuOpen, setMenuOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(false);
   const navigate = useNavigate();
